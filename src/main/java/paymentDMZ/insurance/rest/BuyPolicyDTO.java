@@ -4,6 +4,7 @@ public class BuyPolicyDTO {
 
 	private String paymentURL;
 	private int paymentID;
+	private int orderId; 
 
 	public BuyPolicyDTO() {
 	
@@ -25,7 +26,12 @@ public class BuyPolicyDTO {
 	public int getPaymentID() {
 		return paymentID;
 	}
-	
-	
 
+	public int getOrderId() {
+		return orderId;
+	}
+
+	public void setOrderId(int orderId) {
+		this.orderId = orderId;
+	}
 }

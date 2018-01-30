@@ -3,6 +3,7 @@ package paymentDMZ.insurance.rest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import paymentDMZ.bean.OsiguranjeDTO;
+import paymentDMZ.bean.PolisaDTO;
 
 @RestController
 @CrossOrigin
@@ -52,18 +53,19 @@ public class PaymentHandlerController {
 	@Value("${error.origin.name}")
 	private String errorOriginName; 
 	
-	private RestTemplate rt = new RestTemplate();
+	@Autowired
+	private RestTemplate rt;
 
 	private final Log logger = LogFactory.getLog(this.getClass());
 	
 	@RequestMapping(value = "/buyPolicy", method = RequestMethod.POST, consumes = javax.ws.rs.core.MediaType.APPLICATION_JSON)
-	public ResponseEntity<?> buyPolicy(@RequestBody OsiguranjeDTO osiguranjeDTO) {
-		String url = "http://" + this.datacentarUrl + "/dcTransakcije/logBeginOfTransaction";
+	public ResponseEntity<?> buyPolicy(@RequestBody PolisaDTO polisaDTO) {
+		String url = "https://" + this.datacentarUrl + "/dcTransakcije/logBeginOfTransaction";
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		
-		HttpEntity<OsiguranjeDTO> request = new HttpEntity<>(osiguranjeDTO);
+		HttpEntity<PolisaDTO> request = new HttpEntity<>(polisaDTO);
 				
 		ResponseEntity<CreateTransakcijaDTO> createTransResponse = rt.postForEntity(url , request , CreateTransakcijaDTO.class);
 		CreateTransakcijaDTO createTransDTO = createTransResponse.getBody();
@@ -83,11 +85,12 @@ public class PaymentHandlerController {
 				String.valueOf(createTransDTO.getId())));
 		paymentDTO.setFailedURL(insuranceWebAppFailedUrl.replace("{id}", String.valueOf(createTransDTO.getId())));
 		paymentDTO.setSuccessURL(insuranceWebAppSuccessUrl.replace("{id}", String.valueOf(createTransDTO.getId())));
+		paymentDTO.setVrstaPlacanja(polisaDTO.vrstaPlacanja);
 		
 		System.out.println("PaymentDTO:		" + paymentDTO);
 		
 		HttpEntity<PCNewPaymentDTO> requestProcessPayment = new HttpEntity<>(paymentDTO);
-		String processPaymentURL = "http://" + this.paymentConcentratorUrl + "paymentConcentratorMain/processPayment/aquirer"; 
+		String processPaymentURL = "https://" + this.paymentConcentratorUrl + "paymentConcentratorMain/processPayment"; 
 		ResponseEntity<BuyPolicyDTO> processPaymentResponse = rt.postForEntity(processPaymentURL , requestProcessPayment , BuyPolicyDTO.class);
 		
 		//////////////////////////////////////////////////////////////
@@ -102,7 +105,7 @@ public class PaymentHandlerController {
 	
 	@RequestMapping(value = "/completePaymentResponse", method = RequestMethod.POST, consumes = javax.ws.rs.core.MediaType.APPLICATION_JSON)
 	public ResponseEntity<?> completePaymentResponse(@RequestBody ResponseDTO responseDTO) {
-		String url = "http://" + this.datacentarUrl + "/dcTransakcije/logEndOfTransaction";
+		String url = "https://" + this.datacentarUrl + "/dcTransakcije/logEndOfTransaction";
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
